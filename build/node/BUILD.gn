@@ -7,7 +7,6 @@ action("configure_node") {
   args = [
     "--enable-static",
     "--release-urlbase=https://atom.io/download/electron",
-    "--shared",
     "--shared-openssl",
     "--shared-openssl-includes=" + rebase_path("//third_party/boringssl/src/include"),
     "--shared-openssl-libname=boringssl" + ssl_libname_suffix,
@@ -23,6 +22,9 @@ action("configure_node") {
     "--config-out-dir=" + rebase_path(target_gen_dir),
     "--no-run-gyp",
   ]
+  if (is_component_build) {
+    args += [ "--shared" ]
+  }
   outputs = [
     "$target_gen_dir/config.gypi",
   ]
@@ -76,10 +78,28 @@ action("build_node") {
     "node_lib"
   ]
   if (is_mac) {
-    outputs = [ "$target_out_dir/$configuration/libnode.dylib" ]
+    if (is_component_build) {
+      outputs = [ "$target_out_dir/$configuration/libnode.dylib" ]
+    } else {
+      outputs = [
+        "$target_out_dir/$configuration/libnode.a",
+        "$target_out_dir/$configuration/libcares.a",
+        "$target_out_dir/$configuration/libhttp_parser.a",
+        "$target_out_dir/$configuration/libnghttp2.a",
+        "$target_out_dir/$configuration/libuv.a",
+        "$target_out_dir/$configuration/libzlib.a",
+      ]
+    }
   }
   if (is_linux) {
     outputs = [ "$target_out_dir/$configuration/lib/libnode.so" ]
+    if (is_component_build) {
+      outputs = [ "$target_out_dir/$configuration/lib/libnode.so" ]
+    } else {
+      outputs = [
+        # TODO
+      ]
+    }
   }
   if (is_win) {
     outputs = [ "$target_out_dir/$configuration/node.dll.lib", "$target_out_dir/$configuration/node.dll" ]
